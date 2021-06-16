@@ -7,7 +7,7 @@
 
 
 ## ブラウザから使用する方法(heroku上のwebアプリ)
-
+- https://parallel-translation-generator.herokuapp.com/
 
 
 ## ファイル構成
