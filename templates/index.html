@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+
+<div class="container">
+<h2>英文を翻訳</h2>
+
+<p>翻訳したい英文をクリップボードにコピーしてボタンを押してください，</p>
+
+<p>一文ごとに整形して，対になる日本語訳と組み合わせてクリップボードに保存されます</p>
+
+
+<!--POSTリクエストでページ遷移するフォーム-->
+<form action="/output/" method="POST" enctype="multipart/form-data">
+    <div>
+        <textarea id="eng_text" class ="input" name="eng_text" placeholder="翻訳したい文章を入力してください"></textarea>
+    </div>
+    <div>
+        <input type="submit" class="button btn btn-primary" value="翻訳">
+    </div>
+</form>
+
+
+
+</div>
+{% endblock %}

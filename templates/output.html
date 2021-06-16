@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block content %}
+
+
+<div class="container">
+    <h2>英文を翻訳</h2>
+
+    <p>翻訳したい英文を貼り付けてボタンを押してください．</p>
+
+    <p>一文ごとに整形し，対になる日本語訳と組み合わせて出力されます．(PDFなどの途中改行や文献番号にも対応しております)</p>
+
+    <!--POSTリクエストでページ遷移するフォーム-->
+    <form action="/output/" method="POST" enctype="multipart/form-data">
+        <div>
+            <textarea id="eng_text" class ="input" name="eng_text" placeholder="翻訳したい文章を入力してください"></textarea>
+        </div>
+        <div>
+            <input type="submit" class="button btn btn-primary" value="翻訳">
+        </div>
+    </form>
+
+    <br>
+
+    <h3>翻訳結果</h3>
+
+    <!-- safeで文字列をHTMLとして反映 -->
+    <textarea id="result" class="output">{{ result_text | safe }}</textarea>
+    <button class="btn btn-success" id="copy_button" onclick="copyResultToClipBoard()">テキストをコピー</button>
+    <script>
+        function copyResultToClipBoard(){
+            // クリップボードにコピー
+            var result = document.getElementById('result')
+            result.select();
+            document.execCommand("copy");
+            // ボタンを押した後，クラスを書き換えて，テキストを表示
+            var button = document.getElementById('copy_button');
+            button.setAttribute("class","btn btn-primary");
+            var msg = document.createElement('p');
+            msg.textContent = 'クリップボードにコピーしました';
+            button.after(msg);
+        }
+    </script>
+
+
+    <br>
+    <br>
+    <button class="btn btn-success" onclick=" window.open('https://scrapbox.io/','_blank')">Scrapbox を開く</button>
+    <br>
+
+</div>
+
+{% endblock %}
+
