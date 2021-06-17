@@ -95,6 +95,7 @@ def output():
     ###### PDFの改行後のスペースを整形 ######
     # 改行文字を削除
     english_str = english_str.replace('\n', ' ')
+    english_str = english_str.replace('\r', ' ')
     # 全角スペースを半角スペースに変換
     english_str = english_str.replace('\u3000',' ')
     # ピリオド後の空白文字を削除
