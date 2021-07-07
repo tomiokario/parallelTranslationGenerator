@@ -35,7 +35,7 @@ escape = [
             ['Fig.', 'ESCFIGFIGESC']
         ]
 # アプリケーションのPATHを登録
-path_browser = "/Applications/Brave Browser.app"
+#path_browser = "/Applications/Brave Browser.app"
 
 # 先頭に挿入する文字列
 en_top = ">"        # 英文：引用
@@ -63,6 +63,29 @@ def en2jp(translate_text):
     r_data = json.loads(r_post.text)                # 応答をrequests型からdict型に変換
     jp_text = r_data['text']                        # textを抽出
     return jp_text
+
+
+# 英語文字列を日本語文字列に翻訳(DeepL)
+def en2jp_deepl(translate_text):
+    # 環境変数の取得
+    dotenv_path = join(dirname(__file__), '.env')
+    load_dotenv(dotenv_path)
+    DEEPL_KEY = os.environ.get("DEEPL_KEY")
+    # リクエスト用の辞書変数(json)を作成
+    params = {
+            "auth_key": DEEPL_KEY,
+            "text": translate_text,
+            "source_lang": 'EN', # 入力テキストの言語
+            "target_lang": 'JA'  # 出力テキストの言語(JPではなくJAを使う)
+        }
+
+    # 翻訳の実行と応答の整形
+    request = requests.post("https://api-free.deepl.com/v2/translate", data=params) # POST
+    result = request.json()
+    print()
+    print(result)
+    print()
+    return result["translations"][0]["text"]
 
 
 ########################
@@ -146,7 +169,8 @@ def output():
     ##################
 
     # 英文文字列から翻訳文字列の取得
-    input_str = en2jp(english_str)
+    #input_str = en2jp(english_str)
+    input_str = en2jp_deepl(english_str)
 
     #############################################################################################
     ##################
