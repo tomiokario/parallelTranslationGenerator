@@ -82,9 +82,6 @@ def en2jp_deepl(translate_text):
     # 翻訳の実行と応答の整形
     request = requests.post("https://api-free.deepl.com/v2/translate", data=params) # POST
     result = request.json()
-    print()
-    print(result)
-    print()
     return result["translations"][0]["text"]
 
 
