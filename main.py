@@ -37,9 +37,6 @@ escape = [
 # アプリケーションのPATHを登録
 #path_browser = "/Applications/Brave Browser.app"
 
-# 先頭に挿入する文字列
-en_top = ">"        # 英文：引用
-jp_top = "\t "     # 訳文：インデント下げ+疑問符
 
 
 
@@ -85,7 +82,7 @@ def en2jp_deepl(translate_text):
         # 翻訳の実行と応答の整形
         request = requests.post("https://api-free.deepl.com/v2/translate", data=params) # POST
         result = request.json()
-        return result["translations"][0]["text"]+"||deepl||"
+        return result["translations"][0]["text"]
     else:
         # DEEPL_KEYが存在しない場合、別の翻訳関数を実行
         return en2jp(translate_text)
@@ -97,7 +94,7 @@ def en2jp_deepl(translate_text):
 #indexページ(フォーム画面)
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', default_use_auto_format=True, default_format_type='scrapbox')
 
 # outputページ
 @app.route('/output/', methods = ['POST', 'GET'])
@@ -111,69 +108,65 @@ def output():
 
     # フォームから文字列を取得
     english_str = request.form['eng_text']  # フォームからnameを取得
-
+    auto_split = request.form.get('auto_split',False) # 自動分割(boolean)を取得
+    output_type = request.form['format_type'] # 自動分割(boolean)を取得
 
     #############################################################################################
     ##################
     ### 英文の整形 ###
     ##################
-    ###### PDFの改行後のスペースを整形 ######
-    # 改行文字を削除
-    english_str = english_str.replace('\n', ' ')
-    english_str = english_str.replace('\r', ' ')
-    # 全角スペースを半角スペースに変換
-    english_str = english_str.replace('\u3000',' ')
-    # ピリオド後の空白文字を削除
-    english_str = re.sub(r"\.\s+", ".", english_str)
-    # 先頭の空白文字を削除
-    english_str = re.sub(r"^\s+", "", english_str)
+    if auto_split:
+        ###### PDFの改行後のスペースを整形 ######
+        # 改行文字を削除
+        english_str = english_str.replace('\n', ' ')
+        english_str = english_str.replace('\r', ' ')
+        # 全角スペースを半角スペースに変換
+        english_str = english_str.replace('\u3000',' ')
+        # ピリオド後の空白文字を削除
+        english_str = re.sub(r"\.\s+", ".", english_str)
+        # 先頭の空白文字を削除
+        english_str = re.sub(r"^\s+", "", english_str)
 
-    ###### エスケープ #####
-    # ピリオドを含む文字をエスケープ
-    for i in range(len(escape)):
-        english_str = english_str.replace(escape[i][0], escape[i][1])
+        ###### エスケープ #####
+        # ピリオドを含む文字をエスケープ
+        for i in range(len(escape)):
+            english_str = english_str.replace(escape[i][0], escape[i][1])
+        # 小数をエスケープ
+        array_dicimal = re.findall(r"\d+\.\d+", english_str)    # 小数を抽出してリストに保存
+        english_str = re.sub(r"\d+\.\d+", "<DICIMALDICIMALDICIMAL>", english_str)   # エスケープ
+        # ピリオド後の文献番号をエスケープ
+        numbers = re.findall(r"\.\d+", english_str)   #.<数字>のパターンを抽出してリストに保存
+        english_str = re.sub(r"\.[0-9]+", "<DOTPLUSNUMBERSPATTERN>", english_str) # エスケープ
+        # ピリオド後の[文献番号]をエスケープ
+        brackets_numbers = re.findall(r"\.\[\d+\]", english_str)   #.<数字>のパターンを抽出してリストに保存
+        english_str = re.sub(r"\.\[[0-9]+\]", "<DOTPLUSBRACKETSNUMBERSPATTERN>", english_str) # エスケープ
+        ###### 改行文字の挿入 ######
+        # ピリオドの後に改行を挿入
+        english_str = english_str.replace('.', '.\n\n')
+        # ピリオド+引用文献の後に改行を挿入
+        english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", "<DOTPLUSNUMBERSPATTERN>\n\n")
+        english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", "<DOTPLUSBRACKETSNUMBERSPATTERN>\n\n")
 
-    # 小数をエスケープ
-    array_dicimal = re.findall(r"\d+\.\d+", english_str)    # 小数を抽出してリストに保存
-    english_str = re.sub(r"\d+\.\d+", "<DICIMALDICIMALDICIMAL>", english_str)   # エスケープ
+        ###### エスケープ文字をもとに戻す ######
+        # ピリオドを含む文字列を戻す
+        for i in range(len(escape)):
+            english_str = english_str.replace(escape[i][1], escape[i][0])
+        # 小数をもとに戻す
+        for dicimal in array_dicimal:
+            english_str = english_str.replace("<DICIMALDICIMALDICIMAL>", str(dicimal), 1) #先頭を置換
+        # ピリオド後の文献番号を元の位置に挿入
+        for number in numbers:
+            english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", str(number), 1)  #先頭を置換
+        # ピリオド後の[文献番号]を元の位置に挿入
+        for brackets_number in brackets_numbers:
+            english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", str(brackets_number), 1)  #先頭を置換
 
-    # ピリオド後の文献番号をエスケープ
-    numbers = re.findall(r"\.\d+", english_str)   #.<数字>のパターンを抽出してリストに保存
-    english_str = re.sub(r"\.[0-9]+", "<DOTPLUSNUMBERSPATTERN>", english_str) # エスケープ
-
-    # ピリオド後の[文献番号]をエスケープ
-    brackets_numbers = re.findall(r"\.\[\d+\]", english_str)   #.<数字>のパターンを抽出してリストに保存
-    english_str = re.sub(r"\.\[[0-9]+\]", "<DOTPLUSBRACKETSNUMBERSPATTERN>", english_str) # エスケープ
-
-    ###### 改行文字の挿入 ######
-    # ピリオドの後に改行を挿入
-    english_str = english_str.replace('.', '.\n\n')
-    # ピリオド+引用文献の後に改行を挿入
-    english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", "<DOTPLUSNUMBERSPATTERN>\n\n")
-    english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", "<DOTPLUSBRACKETSNUMBERSPATTERN>\n\n")
-
-    ###### エスケープ文字をもとに戻す ######
-    # ピリオドを含む文字列を戻す
-    for i in range(len(escape)):
-        english_str = english_str.replace(escape[i][1], escape[i][0])
-    # 小数をもとに戻す
-    for dicimal in array_dicimal:
-        english_str = english_str.replace("<DICIMALDICIMALDICIMAL>", str(dicimal), 1) #先頭を置換
-    # ピリオド後の文献番号を元の位置に挿入
-    for number in numbers:
-        english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", str(number), 1)  #先頭を置換
-    # ピリオド後の[文献番号]を元の位置に挿入
-    for brackets_number in brackets_numbers:
-        english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", str(brackets_number), 1)  #先頭を置換
-    #############################################################################################
     ##################
     ### 英文の翻訳 ###
     ##################
-
     # 英文文字列から翻訳文字列の取得
     input_str = en2jp_deepl(english_str)
 
-    #############################################################################################
     ##################
     ### 文章の整形 ###
     ##################
@@ -181,19 +174,27 @@ def output():
     # 文字列を一行ごとに分割して配列に格納
     array_jp = input_str.split('\n')
     array_en = english_str.split('\n')
-
+    # 文章を一行ずつ処理
     for j in range(len(array_jp)):
         # 空行をスキップ
         if array_jp[j] == "" or array_jp[j]==" ":
             continue
         # テキストを生成
+        # 先頭に挿入する文字列
+        if output_type == 'scrapbox':
+            en_top = ">"        # 英文：引用
+            jp_top = "\t "     # 訳文：インデント下げ+疑問符
+        elif output_type == 'markdown':
+            en_top = ">"
+            jp_top = "- "
+        else: # plain text
+            en_top = ""
+            jp_top = " ・"
         output += en_top + array_en[j] + "\n"
         output += jp_top + array_jp[j] + "\n"
-
-
     # output.htmlに変数を渡す
-    return render_template("output.html",result_text=output)
 
+    return render_template('output.html', default_use_auto_format=auto_split, default_format_type=output_type, result_text=output)
 
 ####################
 ####  MAIN処理  ####

@@ -30,6 +30,46 @@
         </div>
     </nav>
 
+    <!-- フォーム -->
+    <div class="container">
+        <h2>英文を翻訳</h2>
+
+        <p>英文をテキストエリアに入力してボタンを押してください。</p>
+
+        <p>一文ごとに整形し、対になる日本語訳と組み合わせて出力します。</p>
+
+        <p>※文章の改行を維持したい場合は、「自動整形」のチェックをオフにしてください</p>
+
+        <!--POSTリクエストでページ遷移するフォーム-->
+        <form action="/output/" method="POST" enctype="multipart/form-data">
+            <div>
+                <textarea id="eng_text" class ="input" name="eng_text" placeholder="翻訳したい文章を入力してください"></textarea>
+            </div>
+            <div>
+                <label for="auto_split">自動整形</label>
+                <input type="checkbox" id="auto_split" name="auto_split" {% if default_use_auto_format %}checked{% endif %}>
+            </div>
+            <div>
+                <label>出力形式:</label>
+                <label>
+                    <input type="radio" name="format_type" value="scrapbox" {% if default_format_type == 'scrapbox'%}checked{% endif %}>
+                    Scrapbox
+                </label>
+                <label>
+                    <input type="radio" name="format_type" value="markdown" {% if default_format_type == 'markdown' %}checked{% endif %}>
+                    Markdown
+                </label>
+                <label>
+                    <input type="radio" name="format_type" value="plain_text" {% if default_format_type == 'plain_text' %}checked{% endif %}>
+                    Plain text
+                </label>
+            </div>
+            <div>
+                <input type="submit" class="button btn btn-primary" value="翻訳">
+            </div>
+        </form>
+    </div>
+
     <!--コンテンツ-->
     {% block content %}{% endblock%}
 {% endblock%}
