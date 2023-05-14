@@ -71,19 +71,24 @@ def en2jp_deepl(translate_text):
     dotenv_path = join(dirname(__file__), '.env')
     load_dotenv(dotenv_path)
     DEEPL_KEY = os.environ.get("DEEPL_KEY")
-    # リクエスト用の辞書変数(json)を作成
-    params = {
-            "auth_key": DEEPL_KEY,
-            "text": translate_text,
-            "source_lang": 'EN', # 入力テキストの言語
-            "target_lang": 'JA'  # 出力テキストの言語(JPではなくJAを使う)
-        }
 
-    # 翻訳の実行と応答の整形
-    request = requests.post("https://api-free.deepl.com/v2/translate", data=params) # POST
-    result = request.json()
-    return result["translations"][0]["text"]
+    # DEEPL_KEYが存在するかどうかチェック
+    if DEEPL_KEY:
+        # リクエスト用の辞書変数(json)を作成
+        params = {
+                "auth_key": DEEPL_KEY,
+                "text": translate_text,
+                "source_lang": 'EN', # 入力テキストの言語
+                "target_lang": 'JA'  # 出力テキストの言語(JPではなくJAを使う)
+            }
 
+        # 翻訳の実行と応答の整形
+        request = requests.post("https://api-free.deepl.com/v2/translate", data=params) # POST
+        result = request.json()
+        return result["translations"][0]["text"]+"||deepl||"
+    else:
+        # DEEPL_KEYが存在しない場合、別の翻訳関数を実行
+        return en2jp(translate_text)
 
 ########################
 ### routing & action ###
@@ -166,7 +171,6 @@ def output():
     ##################
 
     # 英文文字列から翻訳文字列の取得
-    #input_str = en2jp(english_str)
     input_str = en2jp_deepl(english_str)
 
     #############################################################################################
