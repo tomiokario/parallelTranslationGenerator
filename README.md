@@ -9,9 +9,10 @@
 ## ブラウザから使用する方法(heroku上のwebアプリ)
 - https://parallel-translation-generator.herokuapp.com/
 
+## How to use
+- Please see the [Wiki](https://github.com/tomiokario/parallelTranslationGenerator/wiki) of this repository.
 
 ## ファイル構成
-
 - main.py: flask appのメインプログラム
 - templates/: 各ページのhtmlファイルとレイアウト用のhtmlファイル
 - static/: CSSファイル
