@@ -94,7 +94,7 @@ def en2jp_deepl(translate_text):
 #indexページ(フォーム画面)
 @app.route('/')
 def index():
-    return render_template('index.html', default_use_auto_format=True, default_format_type='scrapbox')
+    return render_template('index.html', default_use_auto_format=True, default_format_type='scrapbox', replace_substitution=True, punctuation_type='comma_period')
 
 # outputページ
 @app.route('/output/', methods = ['POST', 'GET'])
@@ -109,7 +109,9 @@ def output():
     # フォームから文字列を取得
     english_str = request.form['eng_text']  # フォームからnameを取得
     auto_split = request.form.get('auto_split',False) # 自動分割(boolean)を取得
-    output_type = request.form['format_type'] # 自動分割(boolean)を取得
+    output_type = request.form['format_type'] # 出力タイプを取得
+    replace_substitution = request.form.get('replace_substitution', False) # []の置換の有無を選択
+    punctuation_type = request.form['punctuation_type'] # 句読点タイプを取得
 
     #############################################################################################
     ##################
@@ -192,9 +194,27 @@ def output():
             jp_top = " ・"
         output += en_top + array_en[j] + "\n"
         output += jp_top + array_jp[j] + "\n"
-    # output.htmlに変数を渡す
+    # []を全角に置換(リンク化の回避)
+    if replace_substitution:
+        output = output.replace('[','［')
+        output = output.replace(']','］')
+    # 句読点の統一
+    if punctuation_type == 'vertical_type':
+        output = output.replace('，','、')
+        output = output.replace('．','。')
+    else:
+        output = output.replace('、','，')
+        output = output.replace('。','．')
 
-    return render_template('output.html', default_use_auto_format=auto_split, default_format_type=output_type, result_text=output)
+    # output.htmlに変数を渡す
+    return render_template(
+            'output.html', 
+            default_use_auto_format=auto_split, 
+            default_format_type=output_type, 
+            replace_substitution=replace_substitution, 
+            punctuation_type=punctuation_type, 
+            result_text=output
+    )
 
 ####################
 ####  MAIN処理  ####
