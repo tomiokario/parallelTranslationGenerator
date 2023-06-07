@@ -78,6 +78,11 @@
                 </div>
 
                 <div>
+                    <label for="newline2blank">改行を空行区切りに変換</label>
+                    <input type="checkbox" id="newline2blank" name="newline2blank" {% if newline2blank %}checked{% endif %}>
+                </div>
+
+                <div>
                     <label>句読点:</label>
                     <label>
                         <input type="radio" name="punctuation_type" value="vertical_type" {% if punctuation_type == 'vertical_type'%}checked{% endif %}>
