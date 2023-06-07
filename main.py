@@ -14,7 +14,6 @@ from os.path import join, dirname
 from dotenv import load_dotenv
 
 
-
 ####################
 ####  setting  #####
 ####################
@@ -28,17 +27,13 @@ bootstrap = Bootstrap(app)
 # エスケープ文字の登録
 escape = [
         #   対象  ⇄  エスケープ先
-            ['e.g.', 'ESCEGEGEGESC'],
-            ['i.e.', 'ESCIEIEIEESC'],
-            ['Eq.',  'ESCEQEQEQESC'],
-            ['vs.',  'ESCVSVSVSESC'],
-            ['Fig.', 'ESCFIGFIGESC']
+            ['e.g.',    'ESCEGEGEGESC'],
+            ['i.e.',    'ESCIEIEIEESC'],
+            ['Eq.',     'ESCEQEQEQESC'],
+            ['vs.',     'ESCVSVSVSESC'],
+            ['et al.',  'ETALETALETAL'],
+            ['Fig.',    'ESCFIGFIGESC']
         ]
-# アプリケーションのPATHを登録
-#path_browser = "/Applications/Brave Browser.app"
-
-
-
 
 ####################
 #####  method  #####
@@ -94,7 +89,14 @@ def en2jp_deepl(translate_text):
 #indexページ(フォーム画面)
 @app.route('/')
 def index():
-    return render_template('index.html', default_use_auto_format=True, default_format_type='scrapbox', replace_substitution=True, punctuation_type='comma_period')
+    return render_template(
+            'index.html',
+            default_use_auto_format=True, 
+            default_format_type='scrapbox', 
+            replace_substitution=True, 
+            newline2blank=False,
+            punctuation_type='comma_period'
+            )
 
 # outputページ
 @app.route('/output/', methods = ['POST', 'GET'])
@@ -111,6 +113,7 @@ def output():
     auto_split = request.form.get('auto_split',False) # 自動分割(boolean)を取得
     output_type = request.form['format_type'] # 出力タイプを取得
     replace_substitution = request.form.get('replace_substitution', False) # []の置換の有無を選択
+    newline2blank = request.form.get('newline2blank', False) # 空行区切りの有無を選択
     punctuation_type = request.form['punctuation_type'] # 句読点タイプを取得
 
     #############################################################################################
@@ -118,16 +121,25 @@ def output():
     ### 英文の整形 ###
     ##################
     if auto_split:
+        if newline2blank:
+            english_str = english_str.replace('\n', '\n<BLANKBLANKBLANK>\n')
+            english_str = english_str.replace('\r', '\n<BLANKBLANKBLANK>\n')
+        else:
+            # 改行文字を削除
+            english_str = english_str.replace('-\n', '')
+            english_str = english_str.replace('-\r', '')
+            english_str = english_str.replace('\n', ' ')
+            english_str = english_str.replace('\r', ' ')
         ###### PDFの改行後のスペースを整形 ######
-        # 改行文字を削除
-        english_str = english_str.replace('\n', ' ')
-        english_str = english_str.replace('\r', ' ')
         # 全角スペースを半角スペースに変換
         english_str = english_str.replace('\u3000',' ')
         # ピリオド後の空白文字を削除
         english_str = re.sub(r"\.\s+", ".", english_str)
         # 先頭の空白文字を削除
         english_str = re.sub(r"^\s+", "", english_str)
+        # 空行用エスケープ文字を戻す
+        english_str = english_str.replace('<BLANKBLANKBLANK>', ' ')
+        
 
         ###### エスケープ #####
         # ピリオドを含む文字をエスケープ
@@ -144,10 +156,10 @@ def output():
         english_str = re.sub(r"\.\[[0-9]+\]", "<DOTPLUSBRACKETSNUMBERSPATTERN>", english_str) # エスケープ
         ###### 改行文字の挿入 ######
         # ピリオドの後に改行を挿入
-        english_str = english_str.replace('.', '.\n\n')
+        english_str = english_str.replace('.', '.\n')
         # ピリオド+引用文献の後に改行を挿入
-        english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", "<DOTPLUSNUMBERSPATTERN>\n\n")
-        english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", "<DOTPLUSBRACKETSNUMBERSPATTERN>\n\n")
+        english_str = english_str.replace("<DOTPLUSNUMBERSPATTERN>", "<DOTPLUSNUMBERSPATTERN>\n")
+        english_str = english_str.replace("<DOTPLUSBRACKETSNUMBERSPATTERN>", "<DOTPLUSBRACKETSNUMBERSPATTERN>\n")
 
         ###### エスケープ文字をもとに戻す ######
         # ピリオドを含む文字列を戻す
@@ -178,8 +190,11 @@ def output():
     array_en = english_str.split('\n')
     # 文章を一行ずつ処理
     for j in range(len(array_jp)):
-        # 空行をスキップ
-        if array_jp[j] == "" or array_jp[j]==" ":
+        print(array_en[j])
+        print(array_jp[j])
+        # 空行の処理
+        if array_en[j] == "" or array_en[j]==" ":
+            output += '\n'
             continue
         # テキストを生成
         # 先頭に挿入する文字列
@@ -194,6 +209,8 @@ def output():
             jp_top = " ・"
         output += en_top + array_en[j] + "\n"
         output += jp_top + array_jp[j] + "\n"
+    # 空行の調整
+    output = output.replace('\n\n\n', '\n\n')
     # []を全角に置換(リンク化の回避)
     if replace_substitution:
         output = output.replace('[','［')
@@ -213,6 +230,7 @@ def output():
             default_format_type=output_type, 
             replace_substitution=replace_substitution, 
             punctuation_type=punctuation_type, 
+            newline2blank = newline2blank,
             result_text=output
     )
 
